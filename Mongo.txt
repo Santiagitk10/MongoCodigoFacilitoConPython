@@ -1,0 +1,928 @@
+- mongosh = abrir el shell de mongo
+- ctrl + c = salidr de mongosh
+- ctrl + l = Limpiar la ventana
+- db.getName(); = Para obtener el nombre de la base de datos actual
+- show databases = para mostrar las bases de datos en el sistema
+- db = Para saber en qué base de datos me encuentro
+- use nombreBaseDeDatos = para crear una base de datos
+- show collections; = para mostrar las colecciones en la base de datos
+- db.nombreColección.insertOne(Objecto) = para crear una colección
+- db.nombreColección.find(); = para ver los documentos dentro de una colección
+- db.nombreColección.insertMany([objecto,objeto]); = para insertar multiples objectos en la colección
+- db.nombreColección.find({propiedad : "valor"}); = para buscar los documentos que tengan una propiedad o más con un valor, retorna un cursor. Cuando nos interesa hacer operaciones como ordenar, etc. Es mejor traer un cursor.
+- db.nombreColección.findOne({propiedad : "valor"}); = para buscar solo un documento que tengan una propiedad o más con un valor, retorna un documento
+- db.users.find({
+    age: {$gt: 34}
+}) = para buscar con un atributo mayor que. Otros comparativos: gte lt lte
+- db.users.find({
+    age: {$gt: 34}
+}).count(); = los métodos que devuelven cursores tienen métodos como .count()
+- db.users.find({
+    $and: [
+        {age: {$gt: 35}},
+        { status: "inactive"}
+    ]
+});  = para buscar con varias condiciones. And
+- db.users.find({
+    age: {$ne:37}
+}); = Not equals, que no tengan ese dato
+- db.users.find({
+    $or: [
+        {age: 34},
+        {age: 35},
+        {age: 36}
+    ]
+}); = condicional or
+- db.users.find({
+    age : {$in: [34,35,36]}
+}); = Condicional or pero para un listado extenso
+- db.users.find({
+    age : {$nin: [34,35,36]}
+}); = Para que me traiga todo lo que no esté en la lista que le paso (not in)
+- db.users.find({
+    status: {$exists: true}
+}); = Para traer todos los documentos que posean una propiedad
+- db.users.find({
+    status: {$exists: false}
+}); = Para traer todos los documentos que no posean una propiedad
+- db.users.find({
+    $and: [
+        {status : {$exists: true}},
+        {status: "active"}
+    ]
+}); = validando que primero exista el atributo y luego que sea active, aunque internamente ya si se busca puntual pues ya se sabe si existe
+- db.users.find().sort(
+    {
+        age: -1
+    }
+); = Ordenar de forma descendente
+- - db.users.find().sort(
+    {
+        age: 1
+    }
+); = Ordenar de forma ascendente
+- db.users.find().sort(
+    {
+        age: -1
+    }
+).limit(1); = para limitar la cantidad de resultados
+- db.users.find({email: /.com$/}) = buscar con expresiones regulares. /^El/ =Comieza con, /.com$/ =Finaliza con, /la/ =Que la contenga
+- db.users.find().skip(5); = para saltarse resultados
+- db.users.find().skip(5).pretty(); = para mostrar en formato json
+- db.users.find().forEach(user => print(user.username)); = para iterar y hacer algo con arrow functions
+- db.users.find({
+	createdAt:{$type: 'date'}
+}); = Para buscar por el tipo de dato de un atributo
+
+
+CURSORES
+
+- Son objetos que representan los documentos que se obtuvieron con la búsqueda. Por defecto trabajan con paginación trayendo 20 resultados
+- Los cursores se pueden almacenar en variables. Y la consulta como tal solo se ejecuta cuando se utiliza la varialbe. Ej: var users = db.users.find();
+- Una vez que se usa la variable y se ejecuta el cursor, este se cierra y ya la variable no existiría.
+
+
+
+PROYECCIONES. 
+
+
+
+- db.users.find(
+    {},
+    {
+        username:true,
+        email:true
+    }
+); = Para obtener sólo las propiedades del documento que requiero
+- db.users.find(
+    {},
+    { 
+        _id: false,
+        username:true,
+        email:true
+    }
+); = Omitiendo el _id que siempre viene por defecto
+
+
+
+MODIFICACIONES
+
+
+- db.users.updateOne(
+    {
+        _id: ObjectId("654e48b7ef1056015737677e")
+    },
+    { 
+        $set: {
+            username: "Cody"
+        }
+    }
+); = Para modificar un documento, sea modificando valores o agregando atributos
+- db.users.updateOne(
+    {
+        _id: ObjectId("654e48b7ef1056015737677e")
+    },
+    { 
+        $unset: {
+            username: true
+        }
+    }
+); = Para remover atributos de un documento
+- db.users.updateMany(
+    {
+        status: { $exists: true}
+    },
+    { 
+        $set: {
+            bio: "Esta es tu biografía"
+        }
+    }
+); = Para modificiar múltiples documentos
+- db.users.updateMany(
+    {
+    },
+    { 
+        $inc: {
+            age: 1
+        }
+    }
+); = Para incrementar propiedades enteras en los documentos
+- db.users.updateOne(
+    {
+        name: 'Luis',
+    },
+    {
+        $set: {
+            edad: 27
+        },   
+    },
+    {
+        upsert: true
+    }
+); = Con upsert se modifica el documento y si no existe se crea
+- db.users.findAndModify(
+    {
+        query: {
+            name: 'Rafael'
+        },
+        update: {
+            $inc: {
+                age: 1
+            }
+        },
+	new: true
+    }
+); = Para encontrar primero y luego modificar. Devuelve por defecto el objeto antes de la modificación, pero agregandole new=true, devuelve el documento ya con la modificación. También se le pueden agrear otros métodos como sort, remove, upsert, etc.
+- db.users.updateMany(
+    {},
+    {
+        $rename: {
+            last_name: 'lastName'
+        }
+    }
+); = Para renombrar los atributos
+
+
+
+
+
+ELIMINAR
+
+
+- db.users.deleteOne({
+    status: "inactive"
+}); = Para borrar un documento
+- db.users.deleteMany({
+    status: "inactive"
+}); = Para borrar múltiples documentos
+- db.nombrecolección.drop(); = para eliminar la colección
+- db.dropDatabase(); = para eliminar la base de datos
+
+
+
+PARA HACER BACKUP DE LA BASE DE DATOS
+
+- salir del cliente
+- Crear una nueva carpeta y navegar a ella: mkdir backup, cd backup
+- mongodump --db nombreBaseDeDatosARespaldar
+- Se genera una carpeta llamada dump con las colecciones
+- Ya se podría borrar la base de datos (Volver al cliente)
+- Salir del cliente
+- Ensayar hacer la restauración. Parado en la carpeta backup : mongorestore --db codigofacilito dump/codigofacilito/
+
+
+
+PARA HACER BACKUP DE COLECCIONES EN PARTICULAR
+
+- mongodump --collection nombreColeccion --db nombreBaseDeDatosDóndeEstáLaColección
+- mongorestore --collection nombreColeccion --db nombreBaseDeDatosDóndeEstáLaColección rutaDóndeEstáElArchivoDumpAPartirDeDóndeEstoyEnLaConsola: Ejemplo: dump/cursoMongoDB/autores.bson
+
+
+
+NOTA: Cuando descargué mongosh ya tenía como que el cliente y no me reconoce los comando mongo, mongodump, etc
+
+
+
+
+
+
+
+
+
+
+DOCUMENTOS ANIDADOS Y LISTAS
+
+
+
+
+
+- db.users.findOne(
+    {
+        courses: ['Python', 'MongoDB', 'sql', 'Java']
+    }
+); = Para buscar una lista con los valores tal cual y en el orden
+- db.users.find(
+    {
+        courses: {
+            $all: ['MongoDB', 'SQL']
+        }
+    }
+); = Para traer los documentos que en su atributo courses que es una lista contengan a 'MongoDB' y 'SQL'. Sin importar el orden. Actúal como $and
+- db.users.find(
+    {
+        $or: [
+            {
+                courses: 'Git'
+            },
+            {
+                courses: 'SQL'
+            }
+        ]
+    }
+); = Busquedas con clausula OR dentro de una lista 
+- db.users.find(
+    {
+        'address.country': 'MX'
+    }
+); = Para filtrar documentos embebidos
+- db.users.find(
+    {
+        'address.country': 'MX'
+    },
+    {
+        username: true,
+        'address.zip': true
+    }
+); = Proyección en una búsqueda sobre un dato anidado
+- db.users.updateMany(
+    {
+        'address.zip': {$exists: true}
+    },
+    {
+        $set : {
+            'address.zip': 110
+        }
+    }
+); = Actualizar todos los que cumplan la condición y actualizar los atributos que deseo
+- db.users.updateMany(
+    {
+        'address': {$exists: false}
+    },
+    {
+        $set : {
+            'address': {
+                country : 'MX',
+                zip: 2017
+            }
+        }
+    }
+); = Actualizar todos dónde no exista un atributo y se le agrega ese atributo con anidación
+db.users.find(
+    {
+        comments: {
+            $elemMatch: {
+                like: false
+            }
+        }
+    }
+); = Para filtrar documentos que están detro de un listado, filtrando por el atributo like.
+Nota: $elemMatch nos permite filtrar sobre atributos de documentos dentro de listados
+- db.users.find(
+    {
+        comments: {
+            $elemMatch: {
+                $and : [
+                    {like: true},
+                    {tags: {$exists: true}}
+                ]
+            }
+        }
+    }
+); = los que en los comentarios tengan like como true y que tengan tags
+- db.users.updateOne(
+    {
+        username: 'user13'
+    },
+    {
+        $push: {
+            comments: {
+                like: true,
+                body: 'Me está gustando'
+            }
+        }
+    }
+); = Para añadir un nuevo objeto a un listado. Se utiliza $push
+- db.users.updateOne(
+    {
+        username: 'user13'
+    },
+    {
+        $push: {
+            'comments.3.tags': 'Tutor'
+        }
+    }
+); = para agregar un tag al listado que se encuentra en el comentario 3. Se le pansa el index comenzando en cero.
+- db.users.updateOne(
+    {
+        name: 'Eduardo'
+    },
+    {
+        $push: {
+            courses : {
+                $each: ['Django', 'Rails', 'Rust']
+            }
+        }
+    }
+); = Para hacer push de varios elementos, se utiliza $each en combinación con push
+- db.users.updateOne(
+    {
+        name: 'Eduardo'
+    },
+    {
+        $push: {
+            courses : {
+                $each: ['Django'],
+                $position: 0
+            }
+        }
+    }
+); = para insertar en una posición específica de la lista. Cuando son varios se agregan todos a partir de la posición indicada
+- db.users.updateOne(
+    {
+        username: 'user13'
+    },
+    {
+        $set: {
+            'comments.1.body': 'Me está gustando el curso'
+        }
+    }
+); = Para actualizar se utiliza set. En este caso body no es una lista sino un string
+- db.users.updateOne(
+    {
+        username: 'user13',
+        'comments.like': false
+    },
+    {
+        $set: {
+            'comments.$.body' : 'El curso si me gusta',
+            'comments.$.like': true
+        },
+        $unset: {
+            'comments.tags': true
+        }
+    }
+); = Se usa comodín porque no se conoce el índice y este lo toma mongo de la condición de filtrado cuando lo encuentre.
+- db.users.updateOne(
+    {
+        name: 'Fernando'
+    },
+    {
+        $push: {
+            scores: {
+                $each: [10,10],
+                $sort: 1
+            }
+        }
+    }
+); = Para agredar elementos a un atributo que es una lista y ordenarla de manera ascendente, -1 para descendente, también se pueden ordenar listas string
+- db.users.updateMany(
+    {
+        courses: {
+            $exists: true
+        }
+    },
+    {
+        $pull: {
+            courses: 'Python'
+        }
+    }
+); = Para eliminar un item de un elemento que es una lista, se usa $pull
+- db.users.updateMany(
+    {
+        courses: {
+            $exists: true
+        }
+    },
+    {
+        $pull: {
+            courses: {
+                $in: ['Base de datos', 'C#']
+            }
+        }
+    }
+); = Para eliminar varios items de un elemento que es una lista, se usa $pull combinado con $in. Elimina los elementos que encuentre, no necesariamente los tiene que encontrar todos y pueden ser de varios documentos a la vez si entran dentro de la condición de filtrado 
+- db.users.findOne(
+    {
+        name: 'Eduardo'
+    },
+    {
+        id: false,
+        name: true,
+        courses: {
+            $slice: 1
+        }
+    }
+); = Para traerme solo el primer elemento en la lista cursos se usa $slice y la posición (no el índice que comienza en 0), -1 para el último dato en la lista. Si se pone  [0,3] sería desde el índice 0 hasta el 3 sin incluirlo.  
+- db.users.find(
+    {
+        courses: {
+            $size: 5
+        }
+    }
+); = Para solo traer los documentos en los que la lista tenga 5 elementos. Se usa el tamaño o $size
+- db.users.find(
+    {   
+        $and: [
+            {
+                courses: {
+                    $exists: true
+                }
+            },
+            {
+                $where: 'this.courses.length > 3'
+            }
+        ]
+       
+    }
+); = Con $size no se puede utilizar operadores relacionales, entonces se usa $where con código javascript. Se debe validar primero que la propiedad exista porque la búsqueda en mongo se hace uno a uno y si no existe al aplicar el where sale un error al aplicar el length a un undefined
+
+
+
+
+
+
+
+FRAMEWORK AGGREGATE
+
+
+
+
+
+- Se le pasan las tareas en orden de ejecución (pipe) en la forma de un array con objectos representando estas tareas, las tareas utilizan un operador
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                age: {$age: 25}
+            }
+        },
+        {
+            $match: {
+                courses: {$exists: true}
+            }
+        }
+    ]
+); = ejemplo de varios filtros consecutivos
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                age: {$age: 25}
+            }
+        },
+        {
+            $match: {
+                courses: {$exists: true}
+            }
+        },
+        {
+            $project: {
+                _id: false, name: true, courses: true
+            }
+        }
+    ]
+); = projección de los datos que necesito
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                age: {$age: 25}
+            }
+        },
+        {
+            $match: {
+                courses: {$exists: true}
+            }
+        },
+        {
+            $project: {
+                _id: false, name: true, courses: true
+            }
+        },
+        {
+            $project: {
+                name: true,
+                firstCourses: {
+                    $slice: ['$courses', 2]
+                }
+            }
+        }
+    ]
+); = ejemplo de projección con slice, en donde se crea un nuevo atributo que tiene solo los dos primero cursos de ese listado
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                age: {$age: 25}
+            }
+        },
+        {
+            $match: {
+                courses: {$exists: true}
+            }
+        },
+        {
+            $project: {
+                _id: false, name: true, courses: true
+            }
+        },
+        {
+            $project: {
+                name: true,
+                firstCourses: {
+                    $slice: ['$courses', 2]
+                }
+            }
+        },
+        {
+            $project: {
+                name: true,
+                course: {
+                    $arrayElemAt: ['$firstCourses', 0]
+                }
+            }
+        }
+    ]
+); = Ejemplo usando arrayElementAt trayecto el primer elemento del array que se generó en pipe anterior. De igual forma se genera una nueva propiedad
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                age: {$age: 25}
+            }
+        },
+        {
+            $match: {
+                courses: {$exists: true}
+            }
+        },
+        {
+            $project: {
+                _id: false, name: true, courses: true
+            }
+        },
+        {
+            $project: {
+                name: true,
+                firstCourses: {
+                    $slice: ['$courses', 2]
+                }
+            }
+        },
+        {
+            $project: {
+                name: true,
+                course: {
+                    $arrayElemAt: ['$firstCourses', 0]
+                }
+            }
+        },
+        {
+            $addFields: {
+                currentDate: new Date()
+            }
+        }
+    ]
+); = addFields para agregar nuevos campos. Usando $ se puede usar las propiedades del pipe anterior
+- db.users.aggregate(
+    {
+        $match: {
+            scores: {$exists: true}
+        }
+    },
+    {
+        $project: {
+            _id: false, name: true, scores: true
+        }
+    },
+    {
+        $set: {
+            sum: { $sum: '$scores'}
+        }
+    },
+    {
+        $set: {
+            avg: { $avg: '$scores'}
+        }
+    }
+); = con $set se pueden agregar atributos y hacer ciertas operaciones con la data para asignarles valor, como por ejemplo sumas y promedios
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                $and: [
+                    {
+                        name: {$exists:true}
+                    },
+                    {
+                        lastName: {$exists:true}
+                    }
+                ]
+            }
+        },
+        {
+            $project: {
+                _id:false, name:true, lastName:true
+            }
+        },
+        {
+            $project: {
+                fullName: {
+                    $concat: ['$name', ' ', '$lastName']
+                }
+            }
+        }
+    ]
+); = Se crea una nueva propiedad y se concatenan dos atributos en uno.
+- db.items.aggregate(
+    [
+        {
+            $group: {
+                _id: 'type'
+            }
+        }
+    ]
+); = Para agrupar por tipo de producto. El id de agrupamiento sería type
+- db.items.aggregate(
+    [
+        {
+            $group: {
+                _id: 'type',
+                total: { $sum: 1}
+            }
+        }
+    ]
+); = Para contar cuantos items hay de cada tipo añadiendo una nueva propiedad total. Se suma 1 cada vez que se agrega un elemento a un grupo
+- db.items.aggregate(
+    [
+        {
+            $group: {
+                _id: 'type',
+                total: { $sum: 1}
+            }
+        },
+        {
+            $match: {
+                total: { $gt: 1}
+            }
+        }
+    ]
+); = Totos los items que se repitan más de una vez
+- db.users.aggregate(
+    [
+        {
+            $sort: {
+                age: 1
+            }
+        },
+        {
+            $limit: 1
+        }
+    ]
+); = Para ordenar y limitar la cantidad de resultados. Notar que limit no recibe un objeto sino un entero
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                scores: {$exists:true}
+            }
+        },
+        {
+            $project: {
+                _id:false, name:true, scores:true
+            }
+        },
+        {
+            $project: {
+                newListScores: {
+                    $map: {
+                        input: '$scores',
+                        as: 'score',
+                        in: {
+                            $multiply: ['$$score', 10]
+                        }
+                    }
+                }
+            }
+        }
+    ]
+); = Se utiliza map para aplicar una expresión a cada uno de los elementos de una lista. Se utiliza $$ para indicar que el elemento no provee del output anterior en el pipeline sino que es el "as"
+- db.users.aggregate(
+    [
+        {
+            $match: {
+                courses: {$exists: true}
+            }
+        },
+        {
+            $project: {
+                _id:false,name:true,courses:true
+            }
+        },
+        {
+            $project: {
+                newCourses: {
+                    $map: {
+                        input: '$courses',
+                        as: 'course',
+                        in: {
+                            $multiply: ['$$course.progress', 10]
+                        }
+                    }
+                }
+            }
+        }
+    ]
+); = Igual al mapeo anterior solo que los elementos de la lista son objetos y se ejecuta la expresión sobre uno de los atributos de esos objetos
+
+
+
+
+
+LLAVES FORANEAS
+
+
+- Se puede utilizar el ObjectId de un documentos para ser creado como llave foránea en otros documentos y así generar una relación 1 a muchos. Otra opción es simplemente manejar objetos anidados en listas y se tendría una sola colección en lugar de dos:
+
+EJEMPLO: 
+
+var autor = {
+    nombre: 'Stephen King',
+    nacionalidad: 'Estadounidense'
+};
+
+db.autores.inserOne(autor);
+ObjectId("5e46df21bs9996df296hdnn3s")
+
+
+var libro1 = {
+    titulo: 'It',
+    fechaLanzamiento: 1986,
+    autor_id: ObjectId("5e46df21bs9996df296hdnn3s")
+}
+
+var libro1 = {
+    titulo: 'The Shining',
+    fechaLanzamiento: 1978,
+    autor_id: ObjectId("5e46df21bs9996df296hdnn3s")
+}
+
+
+- El escoger usar listas o llaves foráneas va a depender de cuánto se vaya a estar modificando una colección, si no va a tener mucha modificación se puede guardar como listas en los elementos de otra colección. De lo contrario es mejor manejar listas aparte
+
+
+
+INDEXES
+
+
+
+- Permiten una búsqueda más rápida
+- db.users.createIndex(
+    {autor_id: 1}
+); = para crear un index adicional al _id sobre otro atributo y de manera ascendente
+- db.users.getIndexes(); = para consultar los índexes que tiene una colección
+
+
+
+
+JOINS
+
+
+
+- db.autores.aggregate(
+    [
+        {
+            $lookup: {
+                from: 'libros',
+                localField: '_id',
+                foreignField: 'autor_id',
+                as: 'listadoLibros'
+            }
+        }
+    ]
+); = con lookup se pueden hacer JOINS en este caso de la colección autores con libros, dónde el campo _id de autores y autor_id de libros  conincida y la búsqueda tendrá el alias de listadoLibros que será una propiedad para cada autor en autores representando el listado de libros
+- db.autores.aggregate(
+    [
+        {
+            $lookup: {
+                from: 'libros',
+                localField: '_id',
+                foreignField: 'autor_id',
+                as: 'listadoLibros'
+            }
+        },
+        {
+            $match: {
+                listadoLibros: {
+                    $ne: []
+                }
+            }
+        }
+    ]
+); = Como se está usando el framework aggregate se pueden hacer operaciones como por ejemplo traer solo los resultados en donde listadoLibros no sea una lista vacía.
+
+
+
+UNWIND
+
+
+- db.autores.aggregate(
+    [
+        {
+            $lookup: {
+                from: 'libros',
+                localField: '_id',
+                foreignField: 'autor_id',
+                as: 'listadoLibros'
+            }
+        },
+        {
+            $unwind: '$listadoLibros'
+        },
+        {
+            $project: {
+                nombre: true,
+                Libro: '$listadoLibros'
+            }
+        }
+    ]
+); = Con unwind puedo desenvoler la lista y obtener un documento aparte por cada item en lugar de un autor con un listado de libros.
+
+
+
+
+
+INFORMACION SOBRE LA EJECUCIÓN 
+
+
+
+
+- db.autores.find(
+    {
+        nombre: 'Stephen King'
+    }
+).explain('executionStats'); = Para obtener información sobre la consulta. El parámetro ('executionStats');  en explain es opcional
+
+
+
+
+CREAR COLECCION CON REGLAS PARA LOS DOCUMENTOS QUE VA A CONTENER
+
+- db.createCollection("contacts", {Reglas, ver documentación});
+https://www.mongodb.com/docs/manual/reference/method/db.createCollection/
+
+
+
+
+PROYECTO CON MONGO PYTHON Y MONGO ATLAS
+
+- Instalar python y agregar la dirección donde está el ejecutable a la variable de entorno path. Buscar en "Editar las variables del entorno del sistema"
+https://www.youtube.com/watch?v=AMAE0S_NzxE
+- En la carpeta dónde vaya a estar el proyecto ejecutar python -m venv env para crear el entorno virtual 
+- Ejecutar .\env\Scripts\activate para ejecutar el entorno virtual
+- Se crea una carpeta interna y se abre vs code
+
+
+mongodb+srv://santiMongDB:<password>@cluster0.nuc2alk.mongodb.net/?retryWrites=true&w=majority
+
+
+
+
+
+
+
+
+
+
+
+
